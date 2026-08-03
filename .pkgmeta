@@ -5,6 +5,7 @@ manual-changelog: CHANGELOG.md
 ignore:
   - .git
   - .github
+  - assets
   - .gitattributes
   - .gitignore
   - .pkgmeta
