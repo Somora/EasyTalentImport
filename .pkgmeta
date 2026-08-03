@@ -1,0 +1,13 @@
+package-as: EasyTalentImport
+
+manual-changelog: CHANGELOG.md
+
+ignore:
+  - .git
+  - .github
+  - .gitattributes
+  - .gitignore
+  - .pkgmeta
+  - CHANGELOG.md
+  - README.md
+  - release

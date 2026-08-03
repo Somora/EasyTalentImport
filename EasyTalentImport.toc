@@ -1,0 +1,9 @@
+## Interface: 120007
+## Title: Easy Talent Import
+## Notes: Imports talent strings into the currently selected loadout.
+## Author: Somora
+## Version: 1.0.0
+## Category-enUS: Combat
+## X-Credits: Import behavior adapted from TalentTreeTweaks by Numy
+
+EasyTalentImport.lua
