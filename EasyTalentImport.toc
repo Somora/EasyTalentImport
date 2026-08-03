@@ -4,6 +4,7 @@
 ## Author: Somora
 ## Version: 1.0.0
 ## Category-enUS: Combat
+## X-Curse-Project-ID: 1637445
 ## X-Credits: Import behavior adapted from TalentTreeTweaks by Numy
 
 EasyTalentImport.lua

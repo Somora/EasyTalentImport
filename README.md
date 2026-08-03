@@ -2,6 +2,9 @@
 
 ![EasyTalentImport logo](assets/icon.png)
 
+[CurseForge](https://www.curseforge.com/wow/addons/easytalentimport) ·
+[GitHub releases](https://github.com/Somora/EasyTalentImport/releases)
+
 EasyTalentImport is a lightweight World of Warcraft addon that lets you import
 a talent build into the currently selected loadout. Blizzard's default import
 creates a new loadout every time; this addon can update an existing loadout
