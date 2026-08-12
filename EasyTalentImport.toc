@@ -1,8 +1,8 @@
-## Interface: 120007
+## Interface: 120100
 ## Title: Easy Talent Import
 ## Notes: Imports talent strings into the currently selected loadout.
 ## Author: Somora
-## Version: 1.0.0
+## Version: 1.0.1
 ## Category-enUS: Combat
 ## X-Curse-Project-ID: 1637445
 ## X-Credits: Import behavior adapted from TalentTreeTweaks by Numy
