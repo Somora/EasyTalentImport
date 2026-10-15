@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2 - 2026-10-15
+
+- Updated the Retail interface version to 120105 for World of Warcraft 12.1.5.
+
 ## 1.0.1 - 2026-08-12
 
 - Updated the Retail interface version to 120100 for World of Warcraft 12.1.0.
