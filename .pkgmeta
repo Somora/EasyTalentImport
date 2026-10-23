@@ -12,3 +12,4 @@ ignore:
   - CHANGELOG.md
   - README.md
   - release
+  - tests

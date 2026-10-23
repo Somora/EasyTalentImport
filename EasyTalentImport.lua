@@ -33,9 +33,15 @@ local function PurchaseEntries(configID, entries)
         if entry.selectionEntryID then
             success = C_Traits.SetSelection(configID, entry.nodeID, entry.selectionEntryID)
         elseif entry.ranksPurchased then
-            for _ = 1, entry.ranksPurchased do
+            while entry.ranksPurchased > 0 do
                 success = C_Traits.PurchaseRank(configID, entry.nodeID)
+                if not success then
+                    break
+                end
+                entry.ranksPurchased = entry.ranksPurchased - 1
+                completed = completed + 1
             end
+            success = entry.ranksPurchased == 0
         end
 
         if success then
@@ -54,11 +60,25 @@ local function ApplyEntriesToCurrentLoadout(entries)
         return false
     end
 
-    C_Traits.ResetTree(configID, treeID)
+    local canEdit, errorMessage = C_Traits.CanEditConfig(configID)
+    if not canEdit then
+        ShowImportError(errorMessage or LOADOUT_ERROR_IMPORT_FAILED)
+        return false
+    end
+
+    if not C_Traits.ResetTree(configID, treeID) then
+        ShowImportError(LOADOUT_ERROR_IMPORT_FAILED)
+        return false
+    end
 
     -- Some nodes only become purchasable after their prerequisites. Keep making
     -- passes until no additional node can be purchased.
     while PurchaseEntries(configID, entries) > 0 do
+    end
+
+    if next(entries) then
+        ShowImportError("Some talents could not be imported. Review the staged talents or undo the changes before applying.")
+        return false
     end
 
     -- Deliberately do not call CommitConfig here. The normal Apply button is
@@ -74,7 +94,7 @@ local function ConvertLoadoutContent(treeID, loadoutContent)
     for index, nodeID in ipairs(treeNodes) do
         local importedNode = loadoutContent[index]
 
-        if importedNode and importedNode.isNodeSelected then
+        if importedNode and importedNode.isNodeSelected and not importedNode.isNodeGranted then
             local nodeInfo = C_Traits.GetNodeInfo(configID, nodeID)
             if nodeInfo then
                 local isChoiceNode = nodeInfo.type == Enum.TraitNodeType.Selection
@@ -105,6 +125,22 @@ local function ConvertLoadoutContent(treeID, loadoutContent)
 end
 
 local function ImportIntoCurrentLoadout(importText)
+    -- The dialog can remain open while combat starts. Check again at click time.
+    if InCombatLockdown() then
+        ShowImportError("Talents cannot be imported during combat.")
+        return false
+    end
+
+    if PlayerSpellsFrame.TalentsFrame:IsInspecting() then
+        ShowImportError(LOADOUT_ERROR_IMPORT_FAILED)
+        return false
+    end
+
+    if not importText:match("^[A-Za-z0-9+/]+$") then
+        ShowImportError(LOADOUT_ERROR_BAD_STRING)
+        return false
+    end
+
     local importExportMixin = ClassTalentImportExportMixin
     local importStream = ExportUtil.MakeImportDataStream(importText)
     local headerValid, version, specID, treeHash = importExportMixin:ReadLoadoutHeader(importStream)
@@ -136,8 +172,23 @@ local function ImportIntoCurrentLoadout(importText)
         return false
     end
 
-    local loadoutContent = importExportMixin:ReadLoadoutContent(importStream, treeID)
-    if not loadoutContent then
+    -- Blizzard's reader treats an exhausted one-bit read as an unselected node.
+    -- Bound every read so truncated input cannot silently reset missing talents.
+    local remainingBits = importStream:GetNumberOfBits()
+        - importExportMixin.bitWidthHeaderVersion - importExportMixin.bitWidthSpecID - 128
+    local checkedStream = {
+        ExtractValue = function(_, bitWidth)
+            if bitWidth > remainingBits then
+                error("Incomplete talent import string")
+            end
+            remainingBits = remainingBits - bitWidth
+            return importStream:ExtractValue(bitWidth)
+        end,
+    }
+    local contentValid, loadoutContent = pcall(
+        importExportMixin.ReadLoadoutContent, importExportMixin, checkedStream, treeID
+    )
+    if not contentValid or not loadoutContent then
         ShowImportError(LOADOUT_ERROR_BAD_STRING)
         return false
     end
@@ -150,7 +201,6 @@ local function UpdateDialogMode(dialog)
     local importCurrent = importCheckbox:GetChecked()
 
     dialog.NameControl:SetShown(not importCurrent)
-    dialog.NameControl:SetText(importCurrent and ADDON_NAME or "")
     importButton:SetShown(importCurrent)
     dialog.AcceptButton:SetShown(not importCurrent)
 
@@ -158,6 +208,11 @@ local function UpdateDialogMode(dialog)
         importButton:SetEnabled(dialog.ImportControl:HasText())
     else
         dialog:UpdateAcceptButtonEnabledState()
+    end
+    -- Enter invokes Blizzard's OnAccept even when AcceptButton is hidden.
+    -- Keep that path disabled rather than replacing a Blizzard handler.
+    if importCurrent then
+        dialog.AcceptButton:SetEnabled(false)
     end
 end
 
@@ -213,8 +268,9 @@ local function SetupTalentImportDialog()
     end)
     importCheckbox:SetScript("OnLeave", GameTooltip_Hide)
 
-    hooksecurefunc(dialog, "OnTextChanged", function()
+    hooksecurefunc(dialog, "UpdateAcceptButtonEnabledState", function()
         if importCheckbox:GetChecked() then
+            dialog.AcceptButton:SetEnabled(false)
             importButton:SetEnabled(dialog.ImportControl:HasText())
         end
     end)

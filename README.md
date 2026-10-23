@@ -39,6 +39,13 @@ The final structure should contain:
 
 `Interface/AddOns/EasyTalentImport/EasyTalentImport.toc`
 
+## Development checks
+
+Run `lua tests/regression.lua` from the repository root (Lua 5.1 or newer).
+These checks mock the WoW API; combat lockdown and taint propagation still need
+verification in the game client. Test both import modes, Enter in the import
+field, reopening the dialog, hero talents, and the manual Apply Changes button.
+
 ## Credits
 
 The import behavior was isolated and adapted from the
